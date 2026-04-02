@@ -1,12 +1,12 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse  # Para enviar el archivo al navegador
+from fastapi.responses import FileResponse, HTMLResponse
 from docxtpl import DocxTemplate
 import pandas as pd
 import io
 import os
 import uuid
-import shutil  # La herramienta para crear el ZIP
+import shutil
 
 app = FastAPI(title="DocGen Legal Pro")
 
@@ -22,6 +22,10 @@ app.add_middleware(
 OUTPUT_DIR = "salida"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.post("/generar-documentos/")
 async def generar_legal(
@@ -40,55 +44,27 @@ async def generar_legal(
     ruta_lote = os.path.join(OUTPUT_DIR, lote_id)
     os.makedirs(ruta_lote, exist_ok=True)
 
-    archivos_generados = []
-
     # 4. Bucle de generación
     for index, fila in df.iterrows():
+        # Usamos BytesIO para no re-leer el archivo del disco en cada vuelta
         doc = DocxTemplate(io.BytesIO(template_bytes))
         contexto = fila.to_dict()
         doc.render(contexto)
 
-        # Nombre personalizado por cliente
         nombre_cliente = str(fila.get('nombre_cliente', f"Doc_{index}")).replace(" ", "_")
         nombre_final = f"Contrato_{nombre_cliente}.docx"
 
         ruta_final = os.path.join(ruta_lote, nombre_final)
         doc.save(ruta_final)
-        archivos_generados.append(nombre_final)
 
-    # === AQUÍ VA LA LÓGICA DEL ZIP ===
-    nombre_zip = f"Paquete_{lote_id}"
-    # shutil.make_archive crea el archivo .zip físicamente en la carpeta 'salida'
-    ruta_zip_generado = shutil.make_archive(
-        os.path.join(OUTPUT_DIR, nombre_zip),  # Dónde y cómo se llamará
-        'zip',  # Formato
-        ruta_lote  # Qué carpeta queremos comprimir
+    # 5. Crear el ZIP
+    nombre_zip_base = os.path.join(OUTPUT_DIR, f"Paquete_{lote_id}")
+    ruta_zip_final = shutil.make_archive(nombre_zip_base, 'zip', ruta_lote)
+
+    # === LA CLAVE DEL ÉXITO: RESPUESTA DIRECTA ===
+    # En lugar de un JSON, enviamos el archivo físico directamente
+    return FileResponse(
+        path=ruta_zip_final,
+        filename="documentos_legales.zip",
+        media_type='application/zip'
     )
-
-    # Retornamos el link para que el abogado haga clic
-    return {
-        "estado": "Éxito",
-        "total_archivos": len(archivos_generados),
-        "descarga_zip": f"http://127.0.0.1:8000/descargar/{nombre_zip}.zip"
-    }
-
-
-# ESTE ES EL NUEVO "PASILLO" DE DESCARGA
-@app.get("/descargar/{nombre_archivo}")
-async def descargar_archivo(nombre_archivo: str):
-    ruta_completa = os.path.join(OUTPUT_DIR, nombre_archivo)
-
-    if os.path.exists(ruta_completa):
-        return FileResponse(
-            path=ruta_completa,
-            filename=nombre_archivo,
-            media_type='application/zip'
-        )
-    return {"error": "Archivo no encontrado"}
-
-from fastapi.responses import HTMLResponse
-
-@app.get("/", response_class=HTMLResponse)
-async def home():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
