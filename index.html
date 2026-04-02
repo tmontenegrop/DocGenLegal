@@ -2,84 +2,137 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>DocGen Legal Pro - Automatización</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px; text-align: center; }
-        h2 { color: #2c3e50; margin-bottom: 20px; }
-        input { margin: 10px 0; width: 100%; }
-        button { background-color: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 15px; }
-        button:hover { background-color: #219150; }
-        #resultado { margin-top: 20px; display: none; padding: 15px; background: #e8f5e9; border-radius: 6px; }
-        .logo { font-weight: bold; font-size: 24px; color: #2980b9; margin-bottom: 10px; display: block; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocGen Legal Pro | Gestión Documental</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-slate-50 font-sans text-slate-900">
 
-<div class="card">
-    <span class="logo">⚖️ DocGen Legal</span>
-    <h2>Generador de Documentos</h2>
+    <nav class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="bg-blue-600 p-2 rounded-lg">
+                <i class="fas fa-gavel text-white text-xl"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-800">DocGen <span class="text-blue-600">Legal Pro</span></h1>
+        </div>
+        <div class="hidden md:flex gap-6 text-sm font-medium text-slate-500">
+            <a href="#" class="hover:text-blue-600">Historial</a>
+            <a href="#" class="hover:text-blue-600">Plantillas</a>
+            <a href="#" class="text-blue-600 border-b-2 border-blue-600">Generador</a>
+        </div>
+    </nav>
 
-    <label>1. Sube tu Excel (.xlsx)</label>
-    <input type="file" id="excelFile" accept=".xlsx">
+    <main class="max-w-4xl mx-auto py-12 px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-extrabold text-slate-900 mb-2">Generación Masiva de Documentos</h2>
+            <p class="text-slate-500">Automatiza tus contratos legales en segundos subiendo tu base de datos.</p>
+        </div>
 
-    <label>2. Sube tu Plantilla Word (.docx)</label>
-    <input type="file" id="wordFile" accept=".docx">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-    <button onclick="enviarDatos()">Generar y Descargar ZIP</button>
+                    <div class="space-y-4">
+                        <label class="block text-sm font-semibold text-slate-700">1. Base de Datos (Excel)</label>
+                        <div class="relative group">
+                            <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden">
+                            <label for="excelFile" class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-300 transition-all">
+                                <i class="fas fa-file-excel text-3xl text-slate-400 group-hover:text-blue-500 mb-2"></i>
+                                <span class="text-sm text-slate-600 group-hover:text-blue-700 font-medium">Seleccionar Excel</span>
+                                <span class="text-xs text-slate-400 mt-1">.xlsx o .xls</span>
+                            </label>
+                        </div>
+                    </div>
 
-    <div id="resultado">
-        <p>✅ ¡Proceso completado!</p>
-        <a id="linkDescarga" href="#" style="color: #27ae60; font-weight: bold;">Haz clic aquí para descargar tu ZIP</a>
-    </div>
-</div>
+                    <div class="space-y-4">
+                        <label class="block text-sm font-semibold text-slate-700">2. Plantilla (Word)</label>
+                        <div class="relative group">
+                            <input type="file" id="wordFile" accept=".docx" class="hidden">
+                            <label for="wordFile" class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-300 transition-all">
+                                <i class="fas fa-file-word text-3xl text-slate-400 group-hover:text-blue-500 mb-2"></i>
+                                <span class="text-sm text-slate-600 group-hover:text-blue-700 font-medium">Seleccionar Plantilla</span>
+                                <span class="text-xs text-slate-400 mt-1">.docx</span>
+                            </label>
+                        </div>
+                    </div>
 
-<script>
-async function enviarDatos() {
-    const excel = document.getElementById('excelFile').files[0];
-    const word = document.getElementById('wordFile').files[0];
+                </div>
 
-    if (!excel || !word) {
-        alert("Por favor, sube ambos archivos.");
-        return;
-    }
+                <div class="mt-10">
+                    <button onclick="enviarDatos()" id="btnGenerar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3">
+                        <i class="fas fa-cog" id="spinner"></i>
+                        <span>Generar Paquete Legal (.zip)</span>
+                    </button>
+                </div>
+            </div>
 
-    const formData = new FormData();
-    formData.append("excel_file", excel);
-    formData.append("template_file", word);
+            <div class="bg-slate-50 border-t border-slate-100 p-6">
+                <div class="flex items-start gap-3 text-sm text-slate-500">
+                    <i class="fas fa-shield-alt text-blue-500 mt-1"></i>
+                    <p>Los archivos procesados no se almacenan permanentemente. Se eliminan automáticamente para garantizar la confidencialidad de sus clientes.</p>
+                </div>
+            </div>
+        </div>
+    </main>
 
-    // 1. Usamos una ruta relativa para que funcione en PC y en Render automáticamente
-    const response = await fetch("/generar-documentos/", {
-        method: "POST",
-        body: formData
-    });
+    <script>
+        async function enviarDatos() {
+            const excel = document.getElementById('excelFile').files[0];
+            const word = document.getElementById('wordFile').files[0];
+            const btn = document.getElementById('btnGenerar');
+            const spinner = document.getElementById('spinner');
 
-    if (response.ok) {
-        // 2. Recibimos el archivo ZIP directamente como un 'blob'
-        const blob = await response.blob();
+            if (!excel || !word) {
+                alert("Por favor, sube ambos archivos para continuar.");
+                return;
+            }
 
-        // 3. Creamos el link de descarga "invisible" compatible con móviles
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = 'documentos_legales.zip'; // Nombre del archivo que bajará
+            // UI: Estado de Carga
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            spinner.classList.add('fa-spin');
+            btn.querySelector('span').innerText = "Procesando documentos...";
 
-        document.body.appendChild(a);
-        a.click(); // Forzamos el clic de descarga
+            const formData = new FormData();
+            formData.append("excel_file", excel);
+            formData.append("template_file", word);
 
-        // 4. Limpieza de memoria
-        setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 100);
+            try {
+                const response = await fetch("/generar-documentos/", {
+                    method: "POST",
+                    body: formData
+                });
 
-        alert("¡Éxito! Tu descarga debería comenzar en breve.");
-    } else {
-        alert("Hubo un error al procesar los documentos.");
-    }
-}
-</script>
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'Paquete_Legal_Pro.zip';
+                    document.body.appendChild(a);
+                    a.click();
 
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+
+                    alert("¡Éxito! Los documentos se han generado correctamente.");
+                } else {
+                    alert("Error en el servidor. Revisa el formato de los archivos.");
+                }
+            } catch (error) {
+                alert("Error de conexión. Inténtalo de nuevo.");
+            } finally {
+                // UI: Restaurar botón
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                spinner.classList.remove('fa-spin');
+                btn.querySelector('span').innerText = "Generar Paquete Legal (.zip)";
+            }
+        }
+    </script>
 </body>
 </html>
