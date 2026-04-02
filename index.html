@@ -129,14 +129,16 @@
             try {
                 const response = await fetch("/generar-documentos/", { method: "POST", body: formData });
                 if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Contratos_Generados.zip';
-                    document.body.appendChild(a);
-                    a.click();
-                    alert("¡Proceso completado!");
+    // Proceso normal de descarga...
+} else {
+    // LEER EL ERROR DETALLADO
+    const errorData = await response.json();
+    alert("⚠️ ATENCIÓN: " + (errorData.detalle || "Hubo un error al procesar."));
+
+    // UI: Resetear el botón para que el usuario pueda reintentar
+    btn.disabled = false;
+    spinner.classList.remove('fa-spin');
+    btn.querySelector('span').innerText = "Generar Paquete Legal (.zip)";
                 }
             } catch (e) {
                 alert("Error de conexión.");

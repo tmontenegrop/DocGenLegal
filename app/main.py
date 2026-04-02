@@ -39,6 +39,15 @@ async def generar_legal(
     # 2. Cargar datos
     df = pd.read_excel(io.BytesIO(excel_bytes))
 
+    # --- NUEVA VALIDACIÓN DE CALIDAD ---
+    # Revisamos si hay valores nulos en el Excel
+    if df.isnull().values.any():
+        columnas_con_error = df.columns[df.isnull().any()].tolist()
+        return {
+            "error": "Datos incompletos",
+            "detalle": f"Faltan datos en las columnas: {', '.join(columnas_con_error)}. Por favor, revisa tu Excel."
+        }, 400
+
     # 3. Crear carpeta única para el lote
     lote_id = str(uuid.uuid4())[:8]
     ruta_lote = os.path.join(OUTPUT_DIR, lote_id)
