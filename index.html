@@ -3,150 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocGen Legal Pro | Gestión Documental</title>
+    <title>DocGen Legal Pro | Validador</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .drag-over { @apply bg-blue-100 border-blue-500; }
-    </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900">
+<body class="bg-slate-50 font-sans text-slate-900 pb-20">
 
-    <nav class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-2">
-            <div class="bg-blue-600 p-2 rounded-lg"><i class="fas fa-gavel text-white text-xl"></i></div>
-            <h1 class="text-xl font-bold tracking-tight text-slate-800">DocGen <span class="text-blue-600">Legal Pro</span></h1>
+    <nav class="bg-white border-b border-slate-200 py-4 px-8 mb-8 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center gap-2">
+            <div class="bg-blue-600 p-2 rounded-lg"><i class="fas fa-gavel text-white"></i></div>
+            <h1 class="text-xl font-bold text-slate-800">DocGen <span class="text-blue-600">Legal Pro</span></h1>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto py-12 px-6">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-extrabold text-slate-900 mb-2">Generación Masiva de Documentos</h2>
-            <p class="text-slate-500">Automatiza tus contratos legales en segundos.</p>
+    <main class="max-w-5xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+                <label class="block text-sm font-bold text-slate-700 mb-4">1. Subir Base de Datos (Excel)</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden" onchange="validarExcelInmediato()">
+                <label for="excelFile" id="drop-excel" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-all text-center p-4">
+                    <i class="fas fa-file-excel text-2xl text-slate-400 mb-2"></i>
+                    <span id="text-excel" class="text-sm text-slate-600 font-medium">Click para cargar Excel</span>
+                </label>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+                <label class="block text-sm font-bold text-slate-700 mb-4">2. Plantilla Maestra (Word)</label>
+                <input type="file" id="wordFile" accept=".docx" class="hidden" onchange="marcarCargado('wordFile', 'text-word')">
+                <label for="wordFile" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-all text-center p-4">
+                    <i class="fas fa-file-word text-2xl text-slate-400 mb-2"></i>
+                    <span id="text-word" class="text-sm text-slate-600 font-medium">Click para cargar Word</span>
+                </label>
+            </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                    <div class="space-y-4">
-                        <label class="block text-sm font-semibold text-slate-700">1. Base de Datos (Excel)</label>
-                        <div id="drop-zone-excel" class="relative group">
-                            <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden">
-                            <label for="excelFile" class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all">
-                                <i id="icon-excel" class="fas fa-file-excel text-4xl text-slate-400 mb-3"></i>
-                                <span id="text-excel" class="text-sm text-slate-600 font-medium">Arrastra o selecciona Excel</span>
-                                <span id="name-excel" class="text-xs text-blue-600 mt-2 font-bold hidden"></span>
-                            </label>
-                        </div>
+        <div id="section-previa" class="hidden animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                <div class="p-6 bg-slate-800 text-white flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold">Revisión de Calidad de Datos</h3>
+                        <p class="text-xs text-slate-400">Verifica los campos en rojo antes de continuar.</p>
                     </div>
-
-                    <div class="space-y-4">
-                        <label class="block text-sm font-semibold text-slate-700">2. Plantilla (Word)</label>
-                        <div id="drop-zone-word" class="relative group">
-                            <input type="file" id="wordFile" accept=".docx" class="hidden">
-                            <label for="wordFile" class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all">
-                                <i id="icon-word" class="fas fa-file-word text-4xl text-slate-400 mb-3"></i>
-                                <span id="text-word" class="text-sm text-slate-600 font-medium">Arrastra o selecciona Plantilla</span>
-                                <span id="name-word" class="text-xs text-blue-600 mt-2 font-bold hidden"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="mt-10">
-                    <button onclick="enviarDatos()" id="btnGenerar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-3">
-                        <i class="fas fa-cog" id="spinner"></i>
-                        <span>Generar Paquete Legal (.zip)</span>
+                    <button onclick="generarZipFinal()" id="btnGenerar" class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2">
+                        <i class="fas fa-file-archive" id="spinner"></i>
+                        Generar Documentos
                     </button>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead id="tabla-head" class="bg-slate-100 sticky top-0 shadow-sm"></thead>
+                        <tbody id="tabla-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // Función para actualizar la UI al seleccionar archivos
-        function updateUI(inputId, zoneId, iconId, textId, nameId) {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
-            const text = document.getElementById(textId);
-            const nameSpan = document.getElementById(nameId);
+        // Al subir el Excel, el servidor lo valida automáticamente
+        async function validarExcelInmediato() {
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) return;
 
-            input.addEventListener('change', () => {
-                if (input.files.length > 0) {
-                    const fileName = input.files[0].name;
-                    icon.classList.remove('text-slate-400');
-                    icon.classList.add('text-green-500'); // Cambia a verde al subir
-                    text.innerText = "Archivo cargado con éxito";
-                    nameSpan.innerText = fileName;
-                    nameSpan.classList.remove('hidden');
-                }
-            });
+            document.getElementById('text-excel').innerText = "Analizando: " + file.name;
+
+            const formData = new FormData();
+            formData.append("excel_file", file);
+
+            const res = await fetch("/validar-excel/", { method: "POST", body: formData });
+            const data = await res.json();
+
+            // Renderizar Cabecera
+            const head = document.getElementById('tabla-head');
+            head.innerHTML = `<tr><th class="p-4 border-b">Fila</th>${data.columnas.map(c => `<th class="p-4 border-b">${c}</th>`).join('')}</tr>`;
+
+            // Renderizar Cuerpo con Alertas
+            const body = document.getElementById('tabla-body');
+            body.innerHTML = data.filas.map(fila => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-400">${fila.id}</td>
+                    ${data.columnas.map(col => {
+                        const msgError = fila.alertas[col];
+                        return `<td class="p-4 ${msgError ? 'bg-red-50 text-red-600 font-bold' : ''}" title="${msgError || ''}">
+                            ${fila.datos[col]} ${msgError ? '⚠️' : ''}
+                        </td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+
+            document.getElementById('section-previa').classList.remove('hidden');
+            window.scrollTo({ top: document.getElementById('section-previa').offsetTop, behavior: 'smooth' });
         }
 
-        // Inicializar listeners
-        updateUI('excelFile', 'drop-zone-excel', 'icon-excel', 'text-excel', 'name-excel');
-        updateUI('wordFile', 'drop-zone-word', 'icon-word', 'text-word', 'name-word');
+        function marcarCargado(id, textId) {
+            const file = document.getElementById(id).files[0];
+            document.getElementById(textId).innerText = "✓ " + file.name;
+        }
 
-        // Lógica de Drag & Drop
-        ['excelFile', 'wordFile'].forEach(id => {
-            const zone = document.querySelector(`label[for="${id}"]`);
-
-            ['dragover', 'dragleave', 'drop'].forEach(evt => {
-                zone.addEventListener(evt, e => {
-                    e.preventDefault();
-                    if (evt === 'dragover') zone.classList.add('bg-blue-100', 'border-blue-500');
-                    else zone.classList.remove('bg-blue-100', 'border-blue-500');
-
-                    if (evt === 'drop') {
-                        document.getElementById(id).files = e.dataTransfer.files;
-                        document.getElementById(id).dispatchEvent(new Event('change'));
-                    }
-                });
-            });
-        });
-
-        async function enviarDatos() {
+        async function generarZipFinal() {
             const excel = document.getElementById('excelFile').files[0];
             const word = document.getElementById('wordFile').files[0];
             const btn = document.getElementById('btnGenerar');
             const spinner = document.getElementById('spinner');
 
-            if (!excel || !word) {
-                alert("Por favor, sube ambos archivos.");
-                return;
-            }
+            if (!excel || !word) return alert("Sube ambos archivos.");
 
             btn.disabled = true;
-            spinner.classList.add('fa-spin');
-            btn.querySelector('span').innerText = "Generando documentos...";
+            spinner.className = "fas fa-sync fa-spin";
+            btn.querySelector('span')?.remove();
+            btn.innerHTML += "<span>Procesando...</span>";
 
             const formData = new FormData();
             formData.append("excel_file", excel);
             formData.append("template_file", word);
 
-            try {
-                const response = await fetch("/generar-documentos/", { method: "POST", body: formData });
-                if (response.ok) {
-    // Proceso normal de descarga...
-} else {
-    // LEER EL ERROR DETALLADO
-    const errorData = await response.json();
-    alert("⚠️ ATENCIÓN: " + (errorData.detalle || "Hubo un error al procesar."));
+            const res = await fetch("/generar-zip/", { method: "POST", body: formData });
 
-    // UI: Resetear el botón para que el usuario pueda reintentar
-    btn.disabled = false;
-    spinner.classList.remove('fa-spin');
-    btn.querySelector('span').innerText = "Generar Paquete Legal (.zip)";
-                }
-            } catch (e) {
-                alert("Error de conexión.");
-            } finally {
-                btn.disabled = false;
-                spinner.classList.remove('fa-spin');
-                btn.querySelector('span').innerText = "Generar Paquete Legal (.zip)";
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Contratos_Legales.zip";
+                a.click();
+            } else {
+                alert("Error al generar el ZIP.");
             }
+
+            btn.disabled = false;
+            spinner.className = "fas fa-file-archive";
+            btn.innerHTML = `<i class="fas fa-file-archive" id="spinner"></i> Generar Documentos`;
         }
     </script>
 </body>
