@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+salida/
+.idea/
+*.xlsx
+*.docx

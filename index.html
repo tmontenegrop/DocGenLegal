@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>DocGen Legal Pro - Automatización</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        input { margin: 10px 0; width: 100%; }
+        button { background-color: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 15px; }
+        button:hover { background-color: #219150; }
+        #resultado { margin-top: 20px; display: none; padding: 15px; background: #e8f5e9; border-radius: 6px; }
+        .logo { font-weight: bold; font-size: 24px; color: #2980b9; margin-bottom: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <span class="logo">⚖️ DocGen Legal</span>
+    <h2>Generador de Documentos</h2>
+
+    <label>1. Sube tu Excel (.xlsx)</label>
+    <input type="file" id="excelFile" accept=".xlsx">
+
+    <label>2. Sube tu Plantilla Word (.docx)</label>
+    <input type="file" id="wordFile" accept=".docx">
+
+    <button onclick="enviarDatos()">Generar y Descargar ZIP</button>
+
+    <div id="resultado">
+        <p>✅ ¡Proceso completado!</p>
+        <a id="linkDescarga" href="#" style="color: #27ae60; font-weight: bold;">Haz clic aquí para descargar tu ZIP</a>
+    </div>
+</div>
+
+<script>
+    async function enviarDatos() {
+        const excel = document.getElementById('excelFile').files[0];
+        const word = document.getElementById('wordFile').files[0];
+
+        if (!excel || !word) {
+            alert("Por favor, sube ambos archivos.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("excel_file", excel);
+        formData.append("template_file", word);
+
+        // Llamamos a tu servidor Python
+        const response = await fetch("http://127.0.0.1:8000/generar-documentos/", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.descarga_zip) {
+            document.getElementById('resultado').style.display = 'block';
+            document.getElementById('linkDescarga').href = data.descarga_zip;
+        }
+    }
+</script>
+
+</body>
+</html>
