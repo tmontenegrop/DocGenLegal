@@ -30,7 +30,7 @@
             <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200">
                 <label class="block text-sm font-bold text-slate-700 mb-4">2. Plantilla Maestra (Word)</label>
                 <input type="file" id="wordFile" accept=".docx" class="hidden" onchange="marcarCargado('wordFile', 'text-word')">
-                <label for="wordFile" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-all text-center p-4">
+                <label for="wordFile" id="drop-word" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-all text-center p-4">
                     <i class="fas fa-file-word text-2xl text-slate-400 mb-2"></i>
                     <span id="text-word" class="text-sm text-slate-600 font-medium">Click para cargar Word</span>
                 </label>
@@ -59,8 +59,8 @@
         </div>
     </main>
 
-<script>
-    // 1. UTILIDADES DE INTERFAZ
+<<script>
+    // Función para mostrar nombre de archivo cargado
     function marcarCargado(id, textId) {
         const file = document.getElementById(id).files[0];
         if (file) {
@@ -68,41 +68,59 @@
         }
     }
 
-    // 2. LÓGICA DE DRAG & DROP
-    ['excelFile', 'wordFile'].forEach(id => {
-        const zoneId = id === 'excelFile' ? 'drop-excel' : null;
-        const zone = zoneId ? document.getElementById(zoneId) : document.querySelector(`label[for="${id}"]`);
+    // CONFIGURACIÓN DE DRAG & DROP
+    function configurarDragAndDrop(idInput, idZona, esExcel = false) {
+        const input = document.getElementById(idInput);
+        const zona = document.getElementById(idZona) || document.querySelector(`label[for="${idInput}"]`);
 
-        if (!zone) return;
+        if (!zona) return;
 
-        ['dragover', 'dragleave', 'drop'].forEach(evt => {
-            zone.addEventListener(evt, e => {
+        // Prevenir que el navegador abra el archivo
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(nombreEvento => {
+            zona.addEventListener(nombreEvento, e => {
                 e.preventDefault();
                 e.stopPropagation();
-
-                if (evt === 'dragover') zone.classList.add('bg-blue-100', 'border-blue-500');
-                else zone.classList.remove('bg-blue-100', 'border-blue-500');
-
-                if (evt === 'drop') {
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) {
-                        document.getElementById(id).files = files;
-                        // Disparar el evento manualmente según el tipo
-                        if (id === 'excelFile') validarExcelInmediato();
-                        else marcarCargado('wordFile', 'text-word');
-                    }
-                }
-            });
+            }, false);
         });
-    });
 
-    // 3. VALIDACIÓN EN TIEMPO REAL
+        // Efecto visual al arrastrar
+        ['dragenter', 'dragover'].forEach(nombreEvento => {
+            zona.addEventListener(nombreEvento, () => {
+                zona.classList.add('bg-blue-100', 'border-blue-500');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(nombreEvento => {
+            zona.addEventListener(nombreEvento, () => {
+                zona.classList.remove('bg-blue-100', 'border-blue-500');
+            }, false);
+        });
+
+        // Cuando sueltan el archivo
+        zona.addEventListener('drop', e => {
+            const dt = e.dataTransfer;
+            const archivos = dt.files;
+            input.files = archivos;
+
+            if (esExcel) {
+                validarExcelInmediato();
+            } else {
+                marcarCargado('wordFile', 'text-word');
+            }
+        }, false);
+    }
+
+    // Inicializar el Drag & Drop para ambos cuadros
+    configurarDragAndDrop('excelFile', 'drop-excel', true);
+    configurarDragAndDrop('wordFile', 'drop-word', false);
+
+    // LÓGICA DE VALIDACIÓN (Igual a la anterior)
     async function validarExcelInmediato() {
         const file = document.getElementById('excelFile').files[0];
         if (!file) return;
 
         const textLabel = document.getElementById('text-excel');
-        textLabel.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Analizando ${file.name}...`;
+        textLabel.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Analizando...`;
 
         const formData = new FormData();
         formData.append("excel_file", file);
@@ -111,11 +129,9 @@
             const res = await fetch("/validar-excel/", { method: "POST", body: formData });
             const data = await res.json();
 
-            // Renderizar Cabecera
             const head = document.getElementById('tabla-head');
             head.innerHTML = `<tr><th class="p-4 border-b">Fila</th>${data.columnas.map(c => `<th class="p-4 border-b">${c}</th>`).join('')}</tr>`;
 
-            // Renderizar Cuerpo con Alertas
             const body = document.getElementById('tabla-body');
             body.innerHTML = data.filas.map(fila => `
                 <tr class="border-b hover:bg-slate-50">
@@ -131,55 +147,36 @@
 
             document.getElementById('section-previa').classList.remove('hidden');
             textLabel.innerHTML = `<b class="text-green-600">✓ ${file.name}</b>`;
-            window.scrollTo({ top: document.getElementById('section-previa').offsetTop, behavior: 'smooth' });
-
         } catch (error) {
-            alert("Error al conectar con el servidor de validación.");
-            textLabel.innerText = "Error al cargar. Reintenta.";
+            textLabel.innerText = "Error al validar.";
         }
     }
 
-    // 4. GENERACIÓN FINAL DEL ZIP
     async function generarZipFinal() {
         const excel = document.getElementById('excelFile').files[0];
         const word = document.getElementById('wordFile').files[0];
         const btn = document.getElementById('btnGenerar');
         const spinner = document.getElementById('spinner');
 
-        if (!excel || !word) return alert("Sube ambos archivos (Excel y Word) para generar.");
+        if (!excel || !word) return alert("Sube ambos archivos primero.");
 
         btn.disabled = true;
         spinner.className = "fas fa-sync fa-spin";
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<i class="fas fa-sync fa-spin"></i> Generando ZIP...`;
 
         const formData = new FormData();
         formData.append("excel_file", excel);
         formData.append("template_file", word);
 
-        try {
-            const res = await fetch("/generar-zip/", { method: "POST", body: formData });
-
-            if (res.ok) {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = "Contratos_Legales.zip";
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                alert("¡Documentos generados con éxito!");
-            } else {
-                alert("Error en el servidor al generar los documentos.");
-            }
-        } catch (e) {
-            alert("Error de conexión al intentar generar el archivo.");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-            spinner.className = "fas fa-file-archive";
+        const res = await fetch("/generar-zip/", { method: "POST", body: formData });
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = "Contratos.zip";
+            document.body.appendChild(a); a.click(); a.remove();
         }
+        btn.disabled = false;
+        spinner.className = "fas fa-file-archive";
     }
 </script>
 </body>
