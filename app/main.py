@@ -102,7 +102,7 @@ async def generar_zip(background_tasks: BackgroundTasks, excel_file: UploadFile 
             doc.render(contexto)
 
             # Nombre de archivo seguro
-            nombre_sug = str(fila.get('nombre_cliente', f"Documento_{index + 1}"))
+            nombre_sug = str(fila.get('nombre_trabajador(a)', f"Documento_{index + 1}"))
             nombre_f = re.sub(r'[^\w\s-]', '', nombre_sug).replace(" ", "_")
             doc.save(os.path.join(ruta_lote, f"{nombre_f}.docx"))
 
