@@ -77,44 +77,55 @@ async def validar_excel(excel_file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.post("/generar-zip/")
-async def generar_zip(background_tasks: BackgroundTasks, excel_file: UploadFile = File(...),
-                      template_file: UploadFile = File(...)):
-    lote_id = str(uuid.uuid4())[:8]
-    ruta_lote = os.path.join(OUTPUT_DIR, lote_id)
+import zipfile  # Asegúrate de tener este import arriba del todo
 
+
+@app.post("/generar-zip/")
+async def generar_zip(excel_file: UploadFile = File(...), template_file: UploadFile = File(...)):
     try:
+        # 1. Cargar archivos a memoria
         excel_bytes = await excel_file.read()
         template_bytes = await template_file.read()
         df = pd.read_excel(io.BytesIO(excel_bytes))
 
-        if len(df) > 100:
-            raise HTTPException(status_code=400, detail="Máximo 100 filas.")
-
-        os.makedirs(ruta_lote, exist_ok=True)
+        # 2. Crear un "Archivo Virtual" en memoria para el ZIP
+        zip_buffer = io.BytesIO()
         template_io = io.BytesIO(template_bytes)
 
-        for index, fila in df.iterrows():
-            template_io.seek(0)
-            doc = DocxTemplate(template_io)
-            # Convertimos datos a strings limpios para la plantilla
-            contexto = {k: str(v) if pd.notna(v) else "" for k, v in fila.to_dict().items()}
-            doc.render(contexto)
+        # 3. Abrir el constructor de ZIP
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for index, fila in df.iterrows():
+                template_io.seek(0)
+                doc = DocxTemplate(template_io)
 
-            # Nombre de archivo seguro
-            nombre_sug = str(fila.get('nombre_trabajador(a)', f"Documento_{index + 1}"))
-            nombre_f = re.sub(r'[^\w\s-]', '', nombre_sug).replace(" ", "_")
-            doc.save(os.path.join(ruta_lote, f"{nombre_f}.docx"))
+                # Limpiar datos para la plantilla
+                contexto = {str(k): (str(v) if pd.notna(v) else "") for k, v in fila.to_dict().items()}
+                doc.render(contexto)
 
-        # Crear ZIP
-        ruta_zip_base = os.path.join(OUTPUT_DIR, f"Docs_{lote_id}")
-        zip_final = shutil.make_archive(ruta_zip_base, 'zip', ruta_lote)
+                # Guardar el Word individual en memoria
+                target_word = io.BytesIO()
+                doc.save(target_word)
+                target_word.seek(0)
 
-        # AGREGAR TAREA DE LIMPIEZA: Se ejecuta DESPUÉS de enviar el archivo
-        background_tasks.add_task(limpiar_carpeta, ruta_lote)
+                # Nombre de archivo seguro
+                nombre_raw = str(fila.get('nombre_cliente', f"Documento_{index + 1}"))
+                nombre_clean = re.sub(r'[^\w\s-]', '', nombre_raw).replace(" ", "_")
 
-        return FileResponse(path=zip_final, filename="Paquete_Legal.zip", media_type='application/zip')
+                # Agregar el Word al ZIP virtual
+                zip_file.writestr(f"{nombre_clean}.docx", target_word.getvalue())
+
+        # 4. Preparar el envío del ZIP final
+        zip_buffer.seek(0)
+
+        return StreamingResponse(
+            io.BytesIO(zip_buffer.getvalue()),
+            media_type="application/zip",
+            headers={"Content-Disposition": "attachment; filename=Contratos_Legales.zip"}
+        )
 
     except Exception as e:
-        if os.path.exists(ruta_lote): shutil.rmtree(ruta_lote)
+        print(f"ERROR EN GENERACIÓN: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# NOTA: Asegúrate de importar StreamingResponse de fastapi.responses arriba
+# from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
